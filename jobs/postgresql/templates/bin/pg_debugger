@@ -1,0 +1,10 @@
+#!/bin/bash
+set -e
+mkdir -p /var/vcap/sys/log/postgresql/
+{
+  echo "++++++++++++++++++++++++++ POSTGRESQL-DEBUG date $(date)"
+  echo "POSTGRESQL-DEBUG $@"
+  $2 $3 $4 $5 $6 $7 $8 $9
+  R=$?
+  echo "-------------------------- POSTGRESQL-DEBUG exit code $R at $(date)"
+} >>/var/vcap/sys/log/postgresql/$1.$(date +"%s").log 2>&1

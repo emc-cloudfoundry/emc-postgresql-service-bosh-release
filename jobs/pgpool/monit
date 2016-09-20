@@ -1,0 +1,8 @@
+check process pgpool with pidfile /var/vcap/sys/run/pgpool/pgpool.pid
+  start program "/var/vcap/jobs/pgpool/bin/monit_debugger pgpool_ctl /var/vcap/jobs/pgpool/bin/pgpool_ctl.sh start" with timeout 90 seconds
+  stop program "/var/vcap/jobs/pgpool/bin/monit_debugger pgpool_ctl /var/vcap/jobs/pgpool/bin/pgpool_ctl.sh stop" with timeout 5 seconds
+  group vcap
+
+check file pgpool_log with path /var/log/pgpool.log
+  depends on pgpool
+  if size > <%= p("pgpool.log.size") %> MB then exec "/usr/sbin/logrotate /etc/logrotate.conf"

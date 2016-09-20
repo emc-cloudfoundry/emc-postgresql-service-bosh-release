@@ -1,0 +1,89 @@
+---
+name: postgresql
+packages:
+- postgresql
+- pgpool
+templates:
+ bin/pg_ctl.sh : bin/pg_ctl.sh
+ bin/pg_start.sh: bin/pg_start.sh
+ bin/basebackup.sh: bin/basebackup.sh
+ bin/archiving.sh: bin/archiving.sh
+ bin/restore.sh: bin/restore.sh
+ bin/recovery_1st_stage.sh: bin/recovery_1st_stage.sh
+ bin/pgpool_remote_start: bin/pgpool_remote_start
+ bin/standby_recovery.sh: bin/standby_recovery.sh
+ bin/online_recovery.sh: bin/online_recovery.sh
+ bin/pg_debugger: bin/pg_debugger
+ bin/monit_debugger: bin/monit_debugger
+ bin/set_synchronous_standby_names_on_primary.sh: bin/set_synchronous_standby_names_on_primary.sh
+ conf/pg_hba.conf: conf/pg_hba.conf
+ conf/postgresql.conf: conf/postgresql.conf
+ conf/recovery.conf.pitr: conf/recovery.conf.pitr
+
+properties:
+  postgresql.version: 
+    default: 9.5.1
+  postgresql.super_user.name: 
+    description:
+  postgresql.super_user.password: 
+    description:
+  postgresql.hosts:
+    description:
+  postgresql.port:
+    description:
+  postgresql.max_wal_senders:
+    description:
+  postgresql.pid_file:
+    default: /var/vcap/sys/run/postgresql/pgsql.pid
+  postgresql.ha_mode:
+    default: stream
+  postgresql.synchronous_replication:
+    default: false
+  postgresql.max_connections:
+    default: 100
+  postgresql.shared_buffers:
+    default: 128MB
+  postgresql.timezone:
+    default: UTC
+  postgresql.host-based_auth:
+    description:
+  postgresql.trigger_file:
+    default: /var/vcap/store/postgresql/trigger_file0
+  postgresql.archiving.archive_mode:
+    default: "off"
+  postgresql.archiving.archive_timeout:
+    default: "3600"
+  postgresql.archiving.archive_host:
+    default: 0.0.0.0
+  postgresql.archiving.archive_dir:
+    default: postgresql_archive
+  postgresql.archiving.basebackup_cron:
+    default: "59 23 * * *"
+  postgresql.archiving.basebackup_host:
+    default: "0.0.0.0"
+  postgresql.archiving.basebackup_dir:
+    default: postgresql_basebackup
+  postgresql.log.dir:
+    default: /var/vcap/sys/log/postgresql
+  postgresql.log.file:
+    default: "pg_server-%Y-%m-%d_%H%M.log"
+  postgresql.log.rotation_age:
+    default: 1440
+  postgresql.log.rotation_size:
+    default: 100000
+  postgresql.log.min_messages:
+    default: NOTICE
+  postgresql.log.min_error_statement:
+    default: WARNING
+  postgresql.log.line_prefix:
+    default: "[%t] <%h> "
+  pgpool.hosts:
+    description:
+  pgpool.pcp_user.name:
+    description:
+  pgpool.pcp_user.password:
+    description:
+  pgpool.pcp_port:
+    default: 9898
+  pgpool.pg_servers_load_balance:
+    default: false

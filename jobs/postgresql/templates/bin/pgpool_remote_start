@@ -1,0 +1,3 @@
+#! /bin/bash
+echo "Remote start standby node! -- pgpool_remote_start"
+/var/vcap/jobs/postgresql/bin/pg_debugger pgpool_remote_start /var/vcap/jobs/postgresql/bin/online_recovery.sh remote_start $1 $2

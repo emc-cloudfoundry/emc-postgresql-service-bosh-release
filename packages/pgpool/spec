@@ -1,0 +1,7 @@
+---
+name: pgpool
+
+dependencies:
+
+files:
+- pgpool/*

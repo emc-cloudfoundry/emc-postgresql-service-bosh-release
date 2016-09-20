@@ -1,0 +1,200 @@
+---
+<%
+director_uuid = "26bcf319-3560-4c90-a189-b21518d5736e"
+deployment_name = "pgsql"
+pg_release_name = "emc-postgresql-service-ha-dev"
+pg_release_version = "0+dev.4"
+ssh_release_name = "emc-ssh-dev"
+ssh_release_version = "0+dev.1"
+stemcell_name = "bosh-vsphere-esxi-ubuntu-trusty-go_agent-hardened"
+stemcell_version = "2732-1" ##3197 ##2732-1
+
+pg_hosts = ["10.8.52.78", "10.8.52.79"]
+pg_max_wal_senders = 5
+
+pgpool_hosts = ["10.8.52.80"]
+
+archive_host = "10.8.52.81"
+%>
+
+name: <%= deployment_name %>
+director_uuid: <%= director_uuid %>
+
+releases:
+- name: <%= pg_release_name %>
+  version: <%= pg_release_version %>
+- name: <%= ssh_release_name %>
+  version: <%= ssh_release_version %>
+
+compilation:
+  workers: 1
+  cloud_properties:
+    cpu: 2
+    disk: 3000
+    ram: 4096
+  network: default
+  reuse_compilation_vms: true
+
+networks:
+- name: default
+  subnets:
+  - cloud_properties:
+      fds: unlimited
+      name: lab network
+    dns:
+    - 10.8.0.13
+    gateway: 10.8.52.1
+    range: 10.8.52.0/24
+    reserved:
+    - 10.8.52.2 - 10.8.52.3
+    - 10.8.52.8 - 10.8.52.77
+    - 10.8.52.84 - 10.8.52.254
+    static:
+    - 10.8.52.78 - 10.8.52.81
+
+update:
+  canary_watch_time: 40000 - 90000
+  update_watch_time: 40000 - 90000
+  max_in_flight: 1
+  max_errors: 1
+  canaries: 1
+
+resource_pools:
+- name: pg
+  network: default
+  stemcell:
+    name: <%= stemcell_name %>
+    version: <%= stemcell_version %>
+  size: 4
+  cloud_properties:
+    cpu: 2
+    ram: 2048
+    disk: 5000
+
+jobs:
+- name: archiving
+  templates:
+  - name: ssh
+    release: <%= ssh_release_name %>
+  instances: 1
+  resource_pool: pg
+  persistent_disk: 5000
+  networks:
+  - name: default
+    static_ips: <%= archive_host %>
+- name: postgresql
+  templates:
+  - name: ssh
+    release: <%= ssh_release_name %>
+  - name: postgresql
+    release: <%= pg_release_name %>
+  instances: 2
+  resource_pool: pg
+  persistent_disk: 3000
+  networks:
+  - name: default
+    static_ips: <%= pg_hosts %>
+- name: pgpool
+  templates:
+  - name: ssh
+    release: <%= ssh_release_name %>
+  - name: pgpool
+    release: <%= pg_release_name %>
+  instances: 1
+  resource_pool: pg
+  networks:
+  - name: default
+    static_ips: <%= pgpool_hosts %>
+
+
+properties:
+  user_0: &user_0
+    name: pgsql
+    password: changeme
+    account_expiry_date: -1 # With format "YYYY-MM-DD", the value "-1" means account will never expire.
+    password_age: 99999 # Set the number of days during which a password is valid, the value "99999" means it'll never expire.
+  user_1: &user_1
+    name: pgpool
+    password: changeme
+    account_expiry_date: -1
+    password_age: 99999
+  pgpool:
+    hosts: <%= pgpool_hosts %>
+    port: 9999
+    num_init_children: 32
+    child_life_time: 300
+    client_idle_limit: 300
+    child_max_connections: 0
+    connection_life_time: 0
+    pg_servers_load_balance: true # true or false
+    stream_repl_delay_threshold: 10000
+    pcp_user: *user_1
+    pcp_port: 9898
+    log:
+      facility: "LOCAL0"
+      rotate: 5
+      size: 100 #unit is "M"
+  postgresql:
+    synchronous_replication: false # if the property is set into "true", PgSQL will set as stream based synchronous replication(http://www.postgresql.org/docs/9.5/static/warm-standby.html#SYNCHRONOUS-REPLICATION).
+    max_connections: 500
+    shared_buffers: 1GB
+    max_wal_senders: <%= pg_max_wal_senders %>
+    hosts: <%= pg_hosts %>
+    port: 5432
+    super_user: *user_0
+    host-based_auth:
+    - {address: 10.8.52.0/24, user: all, database: all, method: trust}
+    - {address: 10.8.52.0/24, user: pgsql, database: replication, method: trust}
+    trigger_file: "/var/vcap/store/postgresql/trigger_file0"
+    archiving:
+      archive_mode: "on" # on or off, double quote the value
+      archive_timeout: "60" #unit:second
+      archive_host: <%= archive_host %>
+      archive_dir: postgresql_archive # this directory will be created under persistent disk(/var/vcap/store)
+      basebackup_cron: "59 23 * * *" #run basebackup at 19:23 everyday
+      basebackup_host: <%= archive_host %>
+      basebackup_dir: postgresql_basebackup # this directory will be created under persistent disk(/var/vcap/store)
+    log:
+      file: "pg_server-%Y-%m-%d_%H%M.log"
+      rotation_age: 1440
+      rotation_size: 100000
+      min_messages: NOTICE
+      min_error_statement: WARNING
+      line_prefix: "[%t] <%h> " 
+  ssh:
+    users:
+    - *user_0
+    - *user_1
+    private_key: |
+      -----BEGIN RSA PRIVATE KEY-----
+      MIIEowIBAAKCAQEAx8q7OB5rBE0V4rXQIPQFYlXKV0b6x6XCbPd6eISxiFNb2im3
+      7/fhGBoVy47HcsihzG9AqWKih2pskrTdkGjNIKusJcB3CEOwBx6qb8TgtNYf3W9O
+      inoa87Mvwv2v4ZGPKWEtEOvBbSOISqloF9DmJn5ZG+yIC1w7UfTCTKkp6HviYHtG
+      2gIhAvzj0TQZkXmUWmhPS6d0Aonz8PyqSoyUJvIOODX+p1NOIvyTyBQ6aQ44lpNp
+      Y5OxcNejRH1nRniEITl4MiQNajVUQi/0ghs40C5T49vEZGPOtGmPJ9ZYWkgHHZ27
+      Ue0hezU1jnRXny8d0neSxcIQbpCsZfv9jAz+RQIDAQABAoIBABvepdsgMyF4d1MW
+      tZ/DKnUbLoyaNCVhdAurQgRJzlIL/sYiB6yL0XSBPwUUN7JFVnykEEsQnUdyiw6z
+      +CxK0kJ6cBscC/61Inr7xh6tQgM3014aRsR+YAAawNDcfopiuau2CIlRubu1ty9j
+      Dkg0Ncas3VVN23RqO0Qldm0nM9dgIYBQjnCGPEzo4JbrLiFxVwgzN8aZz86RT8yG
+      kjMkxWnUPQsV2CYDlstPzghSd2YOFwu9r+9Sp8huyhdsNZxb6xgD1VcQqdmO4iUM
+      uxdblC9TcrNA6zfsPpaQOOVpSFNZrFhneS1gjc9XRCl9Pw8MpXoXfmUdJNcKlxx8
+      S756dwECgYEA63mScyPgxHHe8L2YDfQ2nhWyJVF1SJn+8ISUlx5BLUVqNSX5ybHV
+      WpJBAInVJCmNVMb+ikjk5XOfQqIOrkQDZMeXKPRwBkemHvfOaanqJPENtc4OFjBz
+      EUggBuGLmLKY3QdWe9HiB1MF1LhHEzssQsczqiaOMkz8ycd1fOTj1aECgYEA2TTs
+      VY6vCCKHluXNv6dbep8nLukukuU8Qn1r+ZYsW//IgnM2H65REY8Xf4aXW+dr6cCN
+      NTZG4EngGTjMVaPvD6un30LpYBCsVtbt/+SbKhSRE0jVu2WFI7jS31Em6aQn65U/
+      TpkHfA6d1aR18lWum+fJaVxmuMU9sFo3MVPuXiUCgYEAsbtPOKzp6Bxyw463CEE+
+      QE/r6JL1TVk+vde0N+PUGhF8uqTxRrV9biFaAsgGIodib4zLbyDZ8/4zRR4AqrQX
+      Q6gKhhUJwROvZUxxdfuUCVIQoRroMwNatr6Tvd3beePD0YDKXCbszc5yZj65FuDg
+      5X5plpIHXhwR6VMtcJlrBkECgYAUiCcq80DiYPk2L2Tij/xau/6lNY+cfSTUGC0D
+      u8lXrPcUNbXRCtZI9aDAAkX+fwK5ZuUyOX47p2ASokbWdZecgJpuxVFwLkNMNibr
+      QH3WXXlVPFZPz4nlVYxBZddq0IShhUslr9uAQ5Vx44jurmDCBggI+J4RKzvolq6O
+      8CMhLQKBgF/p+6S+H7ThiHTLpq55OTkmDZWSV7JWThgggCBeMKTEfSWOyMRrGsU+
+      8miZ+uxtqyBeVoPV9eRa0JIn8aWHZy9OjeW7pspECl59OQx8khrec5nmD5gqWQIG
+      uc3TI43C/bpkaRpg6LW0voBlscJjXGU0X6oEmdgZtCl9Czoctp4y
+      -----END RSA PRIVATE KEY-----
+    public_key: >
+        ssh-rsa 
+        AAAAB3NzaC1yc2EAAAADAQABAAABAQDHyrs4HmsETRXitdAg9AViVcpXRvrHpcJs93p4hLGIU1vaKbfv9+EYGhXLjsdyyKHMb0CpYqKHamyStN2QaM0gq6wlwHcIQ7AHHqpvxOC01h/db06Kehrzsy/C/a/hkY8pYS0Q68FtI4hKqWgX0OYmflkb7IgLXDtR9MJMqSnoe+Jge0baAiEC/OPRNBmReZRaaE9Lp3QCifPw/KpKjJQm8g44Nf6nU04i/JPIFDppDjiWk2ljk7Fw16NEfWdGeIQhOXgyJA1qNVRCL/SCGzjQLlPj28RkY860aY8n1lhaSAcdnbtR7SF7NTWOdFefLx3Sd5LFwhBukKxl+/2MDP5F
+
+

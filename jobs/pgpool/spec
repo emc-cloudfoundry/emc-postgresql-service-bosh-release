@@ -1,0 +1,84 @@
+---
+name: pgpool
+packages:
+- pgpool
+templates:
+ bin/pgpool_ctl.sh: bin/pgpool_ctl.sh
+ bin/failover.sh: bin/failover.sh
+ bin/failback.sh: bin/failback.sh
+ bin/followmaster.sh: bin/followmaster.sh
+ bin/pgpool_debugger : bin/pgpool_debugger
+ bin/monit_debugger : bin/monit_debugger
+ conf/pgpool.conf: conf/pgpool.conf
+ conf/50-default.conf: conf/50-default.conf
+ conf/pgpool.logrotate: conf/pgpool.logrotate
+
+properties:
+  pgpool.hosts:
+    description:
+  pgpool.port:
+    default: 9999
+  pgpool.pid_file:
+    default: /var/vcap/sys/run/pgpool/pgpool.pid
+  pgpool.log_dir:
+    default: /var/vcap/sys/log/pgpool
+  pgpool.num_init_children:
+    default: 32
+    description: Number of pools
+  pgpool.child_life_time:
+    default: 500
+    description: Pool exits after being idle for this many seconds
+  pgpool.child_max_connections:
+    default: 0
+    description: Pool exits after receiving that many connections, 0 means no exit
+  pgpool.connection_life_time:
+    default: 0
+    description: Connection to backend closes after being idle for this many seconds, 0 means no close
+  pgpool.client_idle_limit:
+    default: 500
+    description: Client is disconnected after being idle for that many seconds(even inside an explicit transactions!), 0 means no disconnection
+  pgpool.stream_repl_delay_threshold:
+    default: 10000
+  pgpool.pg_servers_load_balance:
+    default: true
+  pgpool.pcp_user.name:
+    description:
+  pgpool.pcp_user.password:
+    description:
+  pgpool.pcp_port:
+    default: 9898
+  pgpool.ha:
+    description:
+  pgpool.ha.delegate_ip:
+    default: ""
+    description:
+  pgpool.ha.local_lifecheck_interval:
+    default: 3
+  pgpool.ha.heartbeat_interval:
+    default: 2
+  pgpool.ha.heartbeat_deadtime:
+    default: 10
+  pgpool.log.facility:
+    default: LOCAL0
+  pgpool.log.rotate:
+    default: 5
+  pgpool.log.size:
+    default: 100
+  postgresql.max_connections:
+    default: 100
+  postgresql.version: 
+    default: 9.5.1
+  postgresql.super_user.name: 
+    description:
+  postgresql.super_user.password:
+    description:
+  postgresql.hosts:
+    description:
+  postgresql.port:
+    description:
+  postgresql.ha_mode:
+    default: stream
+  postgresql.trigger_file:
+    default: /var/vcap/store/postgresql/trigger_file0
+  postgresql.pid_file:
+    default: /var/vcap/sys/run/postgresql/pgsql.pid

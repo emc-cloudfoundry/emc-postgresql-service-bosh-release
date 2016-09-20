@@ -1,0 +1,10 @@
+# abort script on any command that exits with a non zero value
+set -e -x
+
+tar xzf postgresql/postgresql.9.5.1.tar.gz -C ${BOSH_INSTALL_TARGET}
+
+#tar xzf postgresql/postgresql-9.4.1.tar.gz
+#cd postgresql-9.4.1
+#./configure --prefix=${BOSH_INSTALL_TARGET}
+#make
+#make install

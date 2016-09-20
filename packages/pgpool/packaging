@@ -1,0 +1,10 @@
+# abort script on any command that exits with a non zero value
+set -e
+cp -R pgpool/* ${BOSH_INSTALL_TARGET}
+dpkg -i -E pgpool/libpq5_9.3.11-0ubuntu0.14.04_amd64.deb \
+		pgpool/libpq-dev_9.3.11-0ubuntu0.14.04_amd64.deb
+tar xzf pgpool/pgpool-II-3.5.2.tar.gz
+cd pgpool-II-3.5.2
+./configure --prefix=${BOSH_INSTALL_TARGET}
+make
+make install

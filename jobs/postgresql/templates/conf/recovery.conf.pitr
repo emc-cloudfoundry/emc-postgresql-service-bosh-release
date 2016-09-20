@@ -1,0 +1,2 @@
+restore_command = '/var/vcap/jobs/postgresql/bin/restore.sh %f %p >>/var/vcap/sys/log/postgresql/restore.log 2>&1'
+recovery_target_time = 'Tue Apr  5 04:11:11 UTC 2016'

@@ -1,0 +1,9 @@
+.blobs/
+.dev_builds/
+.final_builds/
+blobstore/
+dev_releases/
+for_qe.yml
+config/dev.yml
+config/final.yml
+config/private.yml
