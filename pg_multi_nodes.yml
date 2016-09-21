@@ -158,8 +158,8 @@ properties:
       file: "pg_server-%Y-%m-%d_%H%M.log"
       rotation_age: 1440
       rotation_size: 100000
-      min_messages: NOTICE
-      min_error_statement: WARNING
+      min_messages: WARNING
+      min_error_statement: ERROR
       line_prefix: "[%t] <%h> " 
   ssh:
     users:

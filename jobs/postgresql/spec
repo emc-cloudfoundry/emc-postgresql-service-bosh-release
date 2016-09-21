@@ -72,9 +72,9 @@ properties:
   postgresql.log.rotation_size:
     default: 100000
   postgresql.log.min_messages:
-    default: NOTICE
-  postgresql.log.min_error_statement:
     default: WARNING
+  postgresql.log.min_error_statement:
+    default: ERROR
   postgresql.log.line_prefix:
     default: "[%t] <%h> "
   pgpool.hosts:
