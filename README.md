@@ -138,5 +138,4 @@ jobs:
 
 `ssh`(map) - refer to [emc-ssh-bosh-release].
 
-
-    [emc-ssh-bosh-release]: <https://github.com/emc-cloudfoundry/emc-ssh-bosh-release>
+   [emc-ssh-bosh-release]: <https://github.com/emc-cloudfoundry/emc-ssh-bosh-release>
